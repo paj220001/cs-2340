@@ -10,6 +10,7 @@
 	nameMsg:  .asciiz "Enter your name: "
 	intMsg:	  .asciiz "Enter one integer from 1-50: "
 	sportMsg: .asciiz "Enter your favorite sport: "
+	greetings:.asciiz "Greetings: "
 	
 .text
 	li $v0, SysPrintString # service call: print string (SysCalls.asm)
@@ -19,4 +20,14 @@
 	li $v0, SysReadString  # service call: read integer from keyboard to $v0
 	la $a0, name
 	li $a1, 128
+	syscall
+	
+	li $v0, SysPrintString
+	
+	li $v0, SysPrintString 
+	la $a0, greetings
+	syscall
+	
+	li $v0, SysPrintString
+	la $a0, name
 	syscall
