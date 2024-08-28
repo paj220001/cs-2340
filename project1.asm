@@ -115,3 +115,5 @@
 	move $a0, $s3		# $a0 = $s0
 	syscall			# run system call
 	
+	li $v0, SysExit		#exit
+	syscall
