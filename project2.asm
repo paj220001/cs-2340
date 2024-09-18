@@ -51,8 +51,13 @@
     		addi $t0, $t0, 1
     		bne $t0, $s0, getNumbers
     		
-    	Exit1: 
- 
+    	Exit1:
+    	
+ 	li $v0, SysPrintString	# service call: print string 
+	la $a0, beforeMsg	# load address of string to $a0
+	syscall			# run system call
+	
+	
  	li $t0, 0    	# set $t0 to the 0 value
 	printNumbers: 
 		beq $t0, $s0, Exit2    # If index equals size, exit the loop
@@ -74,8 +79,8 @@
 	
    	 # Initialization
     	li $t0, 0          # i = 0 (Outer loop index)
-    	li $t1, 5          # array length (n)
-    	li $t2, 4          # size of an integer (in bytes)
+    	move $t1, $s0           # array length (n)
+	subi $t2, $s0, 1
     
 	outer_loop:
     		li $t3, 0          # j = 0 (Inner loop index)
@@ -103,12 +108,19 @@
     
 	no_swap:
     		addi $t3, $t3, 1   # j = j + 1
-    		blt $t3, $t1, inner_loop  # If j < n - i - 1, continue inner loop
+    		blt $t3, $t2, inner_loop  # If j < n - i - 1, continue inner loop
     
     		addi $t0, $t0, 1   # i = i + 1
-    		bne $t0, $t1, outer_loop  # If i < n - 1, continue outer loop
+    		beq $t0, $t1, exit4  # If i < n - 1, continue outer loop
+    		j outer_loop
+	exit4: 
 	
-		j printSortedNumbers
+	li $v0, SysPrintChar
+	li $a0, '\n'
+	syscall
+	li $v0, SysPrintString	# service call: print string 
+	la $a0, afterMsg	# load address of string to $a0
+	syscall			# run system call
 		
 	li $t0, 0 
 	printSortedNumbers: 
@@ -126,6 +138,72 @@
 		addi $t0, $t0, 1
 		bne $t0, $s0, printSortedNumbers	
 	
-			
-			
+	li $t0, 0    	# set $t0 to the 0 value
+	subi $t9, $s0, 1
+	rearrange:
 
+		addi $t1, $t0, 1
+		div $t1, $t1, 2
+		mfhi $t2
+		 
+		# Calculate addresses of array[j] and array[j+1]
+    		sll $t4, $t0, 2    # $t4 = j * 4 (offset for array[j])
+    		add $t5, $s3, $t4  # $t5 = base_address + j * 4 (address of array[j])
+    		lw $a0, 0($t5)     # $a0 = array[j]
+    
+    		addi $t4, $t4, 4   # $t4 = (j + 1) * 4 (offset for array[j + 1])
+    		add $t6, $s3, $t4  # $t6 = base_address + (j + 1) * 4 (address of array[j + 1])
+    		lw $a1, 0($t6)     # $a1 = array[j + 1]
+    		
+    		bne $t2, 0, else 
+    		# Compare array[j] and array[j + 1]
+   		slt $t7, $a1, $a0  # $t7 = ($a1 < $a0) ? 1 : 0
+    		beq $t7, 1, swap1  # If $t7 == 1, branch to 'swap'
+    		addi  $t0, $t0, 1
+    		bne $t0, $t9, rearrange
+    		j exit5
+    		
+    		
+	swap1:
+		# Swap array[j] and array[j + 1]
+    		sw $a1, 0($t5)     # Store $a1 (array[j + 1]) into array[j]
+    		sw $a0, 0($t6)     # Store $a0 (array[j]) into array[j + 1]
+    		addi  $t0, $t0, 1
+    		j rearrange 
+    		
+    		
+    		
+	else: 
+		sgt $t7, $a1, $a0  # $t7 = ($a1 < $a0) ? 1 : 0
+		beq $t7, 1, swap1   # If $t7 == 1, branch to 'swap'
+		j rearrange 
+    		addi  $t0, $t0, 1
+	exit5:
+	
+	
+	li $v0, SysPrintChar
+	li $a0, '\n'
+	syscall
+	li $v0, SysPrintString	# service call: print string 
+	la $a0, afterRe	# load address of string to $a0
+	syscall
+		
+	li $t0, 0
+	printLast:
+		beq $t0, $s0, Exit6    # If index equals size, exit the loop
+		
+		li $v0, SysPrintInt  	# service call: print integer (SysCalls.asm)
+		sll $t3, $t0, 2
+		add $t4, $s3, $t3
+		lw $a0, 0($t4)		# $a0 = $s0
+		syscall			# run system call
+	
+		li $v0, SysPrintChar
+		li $a0, ' '
+		syscall
+		addi $t0, $t0, 1
+		bne $t0, $s0, printLast
+		
+	Exit6:	
+		li $v0, SysExit
+		syscall
